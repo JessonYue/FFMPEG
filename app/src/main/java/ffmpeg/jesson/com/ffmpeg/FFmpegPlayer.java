@@ -14,4 +14,5 @@ public class FFmpegPlayer {
         System.loadLibrary("jessonffmpeg");
     }
     public native void playMyMedia(String url);
+    public native void decode(String input,String output);
 }
