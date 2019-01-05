@@ -1,5 +1,7 @@
 package ffmpeg.jesson.com.ffmpeg;
 
+import android.view.Surface;
+
 public class FFmpegPlayer {
     static
     {
@@ -12,7 +14,9 @@ public class FFmpegPlayer {
         System.loadLibrary("avfilter-6");
         System.loadLibrary("avdevice-57");
         System.loadLibrary("jessonffmpeg");
+        System.loadLibrary("yuv_static");
     }
     public native void playMyMedia(String url);
     public native void decode(String input,String output);
+    public native void beginrender(String input,Surface surface);
 }

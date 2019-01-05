@@ -19,7 +19,7 @@ android {
         }
         sourceSets {
             main {
-                jniLibs.srcDirs = ['src/main/jni/ffmpeg']
+                jniLibs.srcDirs = ['src/main/jni/ffmpeg','src/main/jni/libyuv']
             }
         }
 

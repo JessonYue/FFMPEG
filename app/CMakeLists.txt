@@ -77,8 +77,17 @@ set_target_properties( postproc-54
         PROPERTIES IMPORTED_LOCATION
         ${CMAKE_SOURCE_DIR}/src/main/jni/ffmpeg/armeabi-v7a/libpostproc-54.so)
 
+#增加libyuv的库函数
+add_library( yuv_static
+        SHARED
+        IMPORTED)
+set_target_properties( yuv_static
+        PROPERTIES IMPORTED_LOCATION
+        ${CMAKE_SOURCE_DIR}/src/main/jni/libyuv/armeabi-v7a/libyuv_static.so)
 
-include_directories(src/main/jni/ffmpeg/include)
+
+include_directories(src/main/jni/ffmpeg/include
+                    src/main/jni/libyuv/include)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -109,6 +118,8 @@ target_link_libraries( # Specifies the target library.
         swresample-2
         swscale-4
         postproc-54
+        yuv_static
+        -landroid # native window
 
         # Links the target library to the log library
         # included in the NDK.
