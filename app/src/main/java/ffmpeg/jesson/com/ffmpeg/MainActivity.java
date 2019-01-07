@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     public void sound(View view) {
         String input = Environment.getExternalStorageDirectory().getAbsolutePath()+"/test.mp3";
         String output = Environment.getExternalStorageDirectory().getAbsolutePath()+"/out.pcm";
-        fFmpegPlayer.beginsound(input,output);
+        //fFmpegPlayer.beginsound(input,output);
+        fFmpegPlayer.beginplay(input,output);
     }
 }
