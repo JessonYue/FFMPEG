@@ -14,9 +14,10 @@ public class FFmpegPlayer {
         System.loadLibrary("avfilter-6");
         System.loadLibrary("avdevice-57");
         System.loadLibrary("jessonffmpeg");
-        System.loadLibrary("yuv_static");
+        System.loadLibrary("yuv_static"); //yuv转换rgb
     }
     public native void playMyMedia(String url);
     public native void decode(String input,String output);
     public native void beginrender(String input,Surface surface);
+    public native void beginsound(String input,String output);
 }

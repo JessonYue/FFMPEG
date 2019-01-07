@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
                     if (granted) { // Always true pre-M
                         fFmpegPlayer = new FFmpegPlayer();
                         //fFmpegPlayer.playMyMedia("http://www.qq.com");
-                        fFmpegPlayer.decode(input,output);
+                        //fFmpegPlayer.decode(input,output);
                     } else {
                         // Oups permission denied
                     }
@@ -49,5 +49,12 @@ public class MainActivity extends AppCompatActivity {
         //Surface传入到Native函数中，用于绘制
         Surface surface = playerview.getHolder().getSurface();
         fFmpegPlayer.beginrender(input, surface);
+    }
+
+    /**音频解析**/
+    public void sound(View view) {
+        String input = Environment.getExternalStorageDirectory().getAbsolutePath()+"/test.mp3";
+        String output = Environment.getExternalStorageDirectory().getAbsolutePath()+"/out.pcm";
+        fFmpegPlayer.beginsound(input,output);
     }
 }

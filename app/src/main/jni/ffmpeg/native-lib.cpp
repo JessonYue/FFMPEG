@@ -10,18 +10,21 @@
 extern "C"{
 #include "libavformat/avformat.h"
 #include "libavcodec/avcodec.h"
-#include "libswscale/swscale.h"
+#include "libswscale/swscale.h" //缩放
 #include "libavutil/pixfmt.h"
 #include "libyuv.h"
+#include "libswresample/swresample.h"  //音频解码
 }
 
 
 //打印日志
 #include <android/log.h>
+#include <cstdio>
+
 #define LOGI(FORMAT,...) __android_log_print(ANDROID_LOG_INFO,"jesson",FORMAT,##__VA_ARGS__);
 #define LOGE(FORMAT,...) __android_log_print(ANDROID_LOG_ERROR,"jesson",FORMAT,##__VA_ARGS__);
 
-
+#define MAX_AUDIO_FRME_SIZE 48000 * 4
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -248,4 +251,106 @@ Java_ffmpeg_jesson_com_ffmpeg_FFmpegPlayer_beginrender(JNIEnv *env, jobject inst
     avformat_free_context(pFormatCtx);
 
     env->ReleaseStringUTFChars(input_,input_cstr);
+}
+
+
+
+extern "C"
+JNIEXPORT void JNICALL
+/***
+ * 音频解码 pcm数据
+ */
+Java_ffmpeg_jesson_com_ffmpeg_FFmpegPlayer_beginsound(JNIEnv *env, jobject instance, jstring input_,
+                                                      jstring output_) {
+    const char *input = env->GetStringUTFChars(input_, 0);
+    const char *output = env->GetStringUTFChars(output_, 0);
+
+    //注册组件
+    av_register_all();
+    AVFormatContext *avFormatContext = avformat_alloc_context();
+
+    if(avformat_open_input(&avFormatContext,input,NULL,NULL)!=0){
+        LOGI("文件无法打开");
+        return;
+    }
+    if(avformat_find_stream_info(avFormatContext,NULL)<0){
+        LOGI("avformat_find_stream_info==>error");
+        return;
+    }
+    //获取音频流信息
+    int i=0,audio_stream_id = -1;
+    for (; i < avFormatContext->nb_streams; ++i) {
+        if(avFormatContext->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO){
+            audio_stream_id = i;
+            break;
+        }
+    }
+    //获取解码器
+    AVCodecContext *avCodecContext = avFormatContext->streams[audio_stream_id]->codec;
+    AVCodec *avCodec = avcodec_find_decoder(avCodecContext->codec_id);
+    if(avCodec == NULL){
+        LOGI("无法获取解码器");
+        return;
+    }
+
+    if(avcodec_open2(avCodecContext,avCodec,NULL)<0){
+        LOGI("无法打开解码器");
+        return;
+    }
+
+    AVFrame *avFrame = av_frame_alloc();
+    //AVPacket *avPacket = av_packet_alloc();
+    AVPacket *avPacket = (AVPacket *)av_malloc(sizeof(AVPacket));
+    int got_frame = 0;
+    SwrContext *swrContext = swr_alloc();
+    enum AVSampleFormat  in_sample_fmt = avCodecContext->sample_fmt;
+
+    int out_sample_rate = 44100;
+    int in_sample_rate = avCodecContext->sample_rate;
+    int index = 0;
+
+    //重新采样设置的参数
+    swr_alloc_set_opts(swrContext, AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16
+                      ,out_sample_rate,avCodecContext->channel_layout,
+                       in_sample_fmt,in_sample_rate, 0,NULL);
+    swr_init(swrContext);
+
+    //输出声道的个数
+    int out_channle_nb = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
+    //格式转换 16位pcm 44100hz 采样率
+    uint8_t *out = static_cast<uint8_t *>(av_malloc(MAX_AUDIO_FRME_SIZE));
+
+    //打印原始音频数据
+    LOGI(" bit_rate = %d \r\n", avCodecContext->bit_rate);
+    LOGI(" sample_rate = %d \r\n", avCodecContext->sample_rate);
+    LOGI(" channels = %d \r\n", avCodecContext->channels);
+    LOGI(" code_name = %s \r\n",avCodecContext->codec->name);
+
+    FILE *fp_pcm = fopen(output,"wb");
+
+    while(av_read_frame(avFormatContext,avPacket)>=0){
+        //解码
+        if(avcodec_decode_audio4(avCodecContext,avFrame,&got_frame,avPacket)<0){
+            LOGI("解码完成");
+        }
+        if(got_frame>0){
+            LOGI("解码：%d",index++);
+            swr_convert(swrContext, &out, MAX_AUDIO_FRME_SIZE,
+                        (const uint8_t**)(avFrame->data), avFrame->nb_samples);
+            int out_buffer_size = av_samples_get_buffer_size(NULL,out_channle_nb,avFrame->nb_samples,
+            AV_SAMPLE_FMT_S16,1);
+            fwrite(out,1,out_buffer_size,fp_pcm);
+        }
+        av_free_packet(avPacket);
+    }
+
+    //释放资源
+
+    fclose(fp_pcm);
+    av_frame_free(&avFrame);
+    av_free(out);
+    swr_free(&swrContext);
+    avcodec_close(avCodecContext);
+    avformat_close_input(&avFormatContext);
+
 }

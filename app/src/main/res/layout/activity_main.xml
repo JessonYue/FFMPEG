@@ -11,7 +11,7 @@
     <ffmpeg.jesson.com.ffmpeg.PlayerView
         android:layout_width="match_parent"
         android:id="@+id/surfaceview"
-        android:layout_weight="9"
+        android:layout_weight="8"
         android:layout_height="0dp"/>
     <Button
         android:layout_width="match_parent"
@@ -19,6 +19,11 @@
         android:onClick="begin"
         android:layout_weight="1"
         android:layout_height="0dp"/>
-
+    <Button
+        android:layout_width="match_parent"
+        android:text="开始PCM音频解析"
+        android:onClick="sound"
+        android:layout_weight="1"
+        android:layout_height="0dp"/>
 
 </LinearLayout>
